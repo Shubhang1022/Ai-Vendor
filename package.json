@@ -1,0 +1,29 @@
+{
+  "name": "vendor-price-platform",
+  "version": "1.0.0",
+  "description": "AI-powered vendor price discovery and negotiation platform",
+  "private": true,
+  "workspaces": [
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "dev": "concurrently \"npm run dev --workspace=services/auth\" \"npm run dev --workspace=services/vendor\" \"npm run dev --workspace=services/price-discovery\"",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "concurrently": "^8.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "gh": "^2.8.9"
+  }
+}
