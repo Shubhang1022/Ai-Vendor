@@ -82,10 +82,10 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 const initializeServices = async () => {
   try {
     await redisService.connect();
-    console.log('Redis connection established');
+    console.log('Storage service initialized successfully');
   } catch (error) {
-    console.error('Failed to connect to Redis:', error);
-    process.exit(1);
+    console.warn('Redis connection failed, using in-memory storage:', error);
+    // Continue with mock service - don't exit
   }
 };
 

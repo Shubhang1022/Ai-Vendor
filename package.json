@@ -5,12 +5,23 @@
   "private": true,
   "workspaces": [
     "services/*",
-    "packages/*"
+    "packages/*",
+    "frontend"
   ],
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
-    "dev": "concurrently \"npm run dev --workspace=services/auth\" \"npm run dev --workspace=services/vendor\" \"npm run dev --workspace=services/price-discovery\"",
+    "test:setup": "node test-setup.js",
+    "dev": "concurrently \"npm run dev --workspace=services/auth\" \"npm run dev --workspace=frontend\"",
+    "dev:backend": "npm run dev --workspace=services/auth",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "start": "node start.js",
+    "start:backend": "npm run start --workspace=services/auth",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "setup": "npm install && npm run setup:redis",
+    "setup:redis": "docker run -d --name vendor-platform-redis -p 6379:6379 redis:7-alpine",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write ."
   },
@@ -24,6 +35,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "gh": "^2.8.9"
+    "gh": "^2.8.9",
+    "axios": "^1.5.0"
   }
 }

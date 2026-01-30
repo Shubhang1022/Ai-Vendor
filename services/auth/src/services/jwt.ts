@@ -82,18 +82,29 @@ class JWTService {
         return null;
       }
 
-      // Generate new tokens
+      // Generate new tokens with new session ID
       const newTokens = this.generateTokens(
         payload.userId,
         sessionData.email,
         sessionData.roles
       );
 
+      // Extract new session ID from the new access token
+      const newSessionId = this.extractSessionId(newTokens.accessToken);
+
+      // Store new session data
+      await redisService.setSession(
+        newSessionId,
+        sessionData,
+        this.parseExpirationTime(config.jwtExpiresIn)
+      );
+
       // Store new refresh token and invalidate old one
       await redisService.deleteRefreshToken(payload.userId, payload.sessionId);
+      await redisService.deleteSession(payload.sessionId);
       await redisService.setRefreshToken(
         payload.userId,
-        this.extractSessionId(newTokens.refreshToken),
+        newSessionId,
         this.parseExpirationTime(config.jwtRefreshExpiresIn)
       );
 
