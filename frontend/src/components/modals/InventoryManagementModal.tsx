@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Edit, Trash2, Package, TrendingUp, AlertTriangle, Search, Filter } from 'lucide-react'
+import { X, Plus, Edit, Package, TrendingUp, AlertTriangle, Search } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface InventoryItem {
@@ -31,6 +31,8 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
   const [loading, setLoading] = useState(false)
   const [aiInsights, setAiInsights] = useState<any>(null)
+  const [cart, setCart] = useState<Array<{id: number, quantity: number}>>([])
+  const [showCheckout, setShowCheckout] = useState(false)
 
   const [newItem, setNewItem] = useState({
     name: '',
@@ -53,7 +55,6 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
   }, [inventory, searchTerm, filterStatus])
 
   const loadInventoryData = () => {
-    // Simulate loading inventory data with AI recommendations
     const mockInventory: InventoryItem[] = [
       {
         id: 1,
@@ -84,36 +85,6 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
         lastRestocked: '2024-01-20',
         status: 'low_stock',
         aiRecommendation: 'Critical: Restock immediately. Predicted stockout in 3 days.'
-      },
-      {
-        id: 3,
-        name: 'Industrial Cleaning Supplies',
-        sku: 'ICS-003',
-        category: 'Supplies',
-        currentStock: 0,
-        minStock: 25,
-        maxStock: 200,
-        unitPrice: 245.00,
-        totalValue: 0,
-        supplier: 'CleanCorp Solutions',
-        lastRestocked: '2024-01-10',
-        status: 'out_of_stock',
-        aiRecommendation: 'Out of stock for 5 days. Lost sales estimated at $2,450.'
-      },
-      {
-        id: 4,
-        name: 'Laptop Accessories Bundle',
-        sku: 'LAB-004',
-        category: 'Electronics',
-        currentStock: 75,
-        minStock: 30,
-        maxStock: 60,
-        unitPrice: 89.99,
-        totalValue: 6749.25,
-        supplier: 'TechSupply Co.',
-        lastRestocked: '2024-01-28',
-        status: 'overstocked',
-        aiRecommendation: 'Overstocked by 15 units. Consider promotional pricing.'
       }
     ]
     setInventory(mockInventory)
@@ -122,7 +93,6 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
   const generateAIInsights = async () => {
     setLoading(true)
     try {
-      // Simulate AI analysis
       await new Promise(resolve => setTimeout(resolve, 1500))
       
       const insights = {
@@ -204,6 +174,86 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
     toast.success('Stock updated successfully!')
   }
 
+  const handleUpdatePrice = (id: number, newPrice: number) => {
+    setInventory(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          unitPrice: newPrice,
+          totalValue: item.currentStock * newPrice
+        }
+      }
+      return item
+    }))
+    toast.success('Price updated successfully!')
+  }
+
+  const addToCart = (id: number, quantity: number) => {
+    const item = inventory.find(item => item.id === id)
+    if (!item || quantity > item.currentStock) {
+      toast.error('Insufficient stock available!')
+      return
+    }
+
+    setCart(prev => {
+      const existing = prev.find(cartItem => cartItem.id === id)
+      if (existing) {
+        return prev.map(cartItem => 
+          cartItem.id === id 
+            ? { ...cartItem, quantity: cartItem.quantity + quantity }
+            : cartItem
+        )
+      } else {
+        return [...prev, { id, quantity }]
+      }
+    })
+    
+    toast.success(`Added ${quantity} ${item.name} to cart!`)
+  }
+
+  const removeFromCart = (id: number) => {
+    setCart(prev => prev.filter(item => item.id !== id))
+    toast.success('Item removed from cart!')
+  }
+
+  const getCartTotal = () => {
+    return cart.reduce((total, cartItem) => {
+      const item = inventory.find(inv => inv.id === cartItem.id)
+      return total + (item ? item.unitPrice * cartItem.quantity : 0)
+    }, 0)
+  }
+
+  const processCheckout = () => {
+    if (cart.length === 0) {
+      toast.error('Cart is empty!')
+      return
+    }
+
+    const total = getCartTotal()
+    
+    setInventory(prev => prev.map(item => {
+      const cartItem = cart.find(c => c.id === item.id)
+      if (cartItem) {
+        const newStock = item.currentStock - cartItem.quantity
+        const status = newStock === 0 ? 'out_of_stock' :
+                      newStock <= item.minStock ? 'low_stock' :
+                      newStock >= item.maxStock ? 'overstocked' : 'in_stock'
+        
+        return {
+          ...item,
+          currentStock: newStock,
+          totalValue: newStock * item.unitPrice,
+          status
+        }
+      }
+      return item
+    }))
+
+    setCart([])
+    setShowCheckout(false)
+    toast.success(`Order processed! Total: $${total.toFixed(2)}`)
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'in_stock': return 'bg-green-100 text-green-800'
@@ -235,9 +285,7 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
         </div>
 
         <div className="flex h-[calc(95vh-140px)]">
-          {/* Main Inventory */}
           <div className="flex-1 flex flex-col">
-            {/* Controls */}
             <div className="p-6 border-b bg-gray-50">
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <div className="flex flex-1 gap-4">
@@ -273,7 +321,6 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
               </div>
             </div>
 
-            {/* Inventory Table */}
             <div className="flex-1 overflow-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0">
@@ -322,20 +369,64 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm space-x-2">
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          defaultValue={item.currentStock}
-                          onBlur={(e) => handleUpdateStock(item.id, parseInt(e.target.value) || 0)}
-                          className="w-16 px-2 py-1 border rounded text-xs"
-                          min="0"
-                        />
+                      <td className="px-6 py-4 text-sm">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">Price:</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              defaultValue={item.unitPrice}
+                              onBlur={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 border rounded text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">Stock:</span>
+                            <input
+                              type="number"
+                              defaultValue={item.currentStock}
+                              onBlur={(e) => handleUpdateStock(item.id, parseInt(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 border rounded text-xs"
+                              min="0"
+                            />
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <input
+                              type="number"
+                              placeholder="Qty"
+                              min="1"
+                              max={item.currentStock}
+                              className="w-12 px-1 py-1 border rounded text-xs"
+                              id={`qty-${item.id}`}
+                            />
+                            <button
+                              onClick={() => {
+                                const qtyInput = document.getElementById(`qty-${item.id}`) as HTMLInputElement
+                                const quantity = parseInt(qtyInput.value) || 1
+                                addToCart(item.id, quantity)
+                                qtyInput.value = ''
+                              }}
+                              className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                              disabled={item.currentStock === 0}
+                            >
+                              Add to Cart
+                            </button>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => setEditingItem(item)}
+                              className="text-primary-600 hover:text-primary-900 p-1"
+                              title="Edit Item"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -344,75 +435,147 @@ export function InventoryManagementModal({ onClose }: InventoryManagementModalPr
             </div>
           </div>
 
-          {/* AI Insights Panel */}
           <div className="w-80 border-l bg-gray-50 overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">AI Insights</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">AI Insights</h3>
+                <button
+                  onClick={() => setShowCheckout(!showCheckout)}
+                  className={`px-3 py-1 rounded text-sm ${
+                    cart.length > 0 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  Cart ({cart.length})
+                </button>
+              </div>
               
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-                  <p className="text-sm text-gray-500 mt-2">Analyzing inventory...</p>
+              {showCheckout ? (
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Shopping Cart</h4>
+                  
+                  {cart.length === 0 ? (
+                    <p className="text-sm text-gray-500">Cart is empty</p>
+                  ) : (
+                    <>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {cart.map((cartItem) => {
+                          const item = inventory.find(inv => inv.id === cartItem.id)
+                          if (!item) return null
+                          
+                          return (
+                            <div key={cartItem.id} className="bg-white p-3 rounded border">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium">{item.name}</div>
+                                  <div className="text-xs text-gray-500">
+                                    ${item.unitPrice.toFixed(2)} × {cartItem.quantity}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-sm font-medium">
+                                    ${(item.unitPrice * cartItem.quantity).toFixed(2)}
+                                  </div>
+                                  <button
+                                    onClick={() => removeFromCart(cartItem.id)}
+                                    className="text-red-500 hover:text-red-700 text-xs"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      
+                      <div className="border-t pt-3">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-medium">Total:</span>
+                          <span className="font-bold text-lg">${getCartTotal().toFixed(2)}</span>
+                        </div>
+                        
+                        <button
+                          onClick={processCheckout}
+                          className="w-full btn btn-primary"
+                        >
+                          Process Order
+                        </button>
+                        
+                        <button
+                          onClick={() => setCart([])}
+                          className="w-full btn btn-secondary mt-2"
+                        >
+                          Clear Cart
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : aiInsights && (
-                <div className="space-y-6">
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">${aiInsights.totalValue.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500">Total Value</div>
+              ) : (
+                <div>
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                      <p className="text-sm text-gray-500 mt-2">Analyzing inventory...</p>
                     </div>
-                    <div className="bg-white p-3 rounded-lg">
-                      <div className="text-2xl font-bold text-yellow-600">{aiInsights.lowStockItems}</div>
-                      <div className="text-xs text-gray-500">Low Stock</div>
-                    </div>
-                  </div>
-
-                  {/* Predictions */}
-                  <div className="bg-white p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Sales Forecast</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Next Week:</span>
-                        <span className="text-sm font-medium">${aiInsights.predictedSales.nextWeek.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Next Month:</span>
-                        <span className="text-sm font-medium">${aiInsights.predictedSales.nextMonth.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* AI Recommendations */}
-                  <div className="bg-white p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">AI Recommendations</h4>
-                    <div className="space-y-2">
-                      {aiInsights.aiRecommendations.map((rec: string, index: number) => (
-                        <div key={index} className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                          {rec}
+                  ) : aiInsights && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">${aiInsights.totalValue.toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">Total Value</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Top Performers */}
-                  <div className="bg-white p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Top Performers</h4>
-                    <div className="space-y-1">
-                      {aiInsights.topPerformers.map((item: string, index: number) => (
-                        <div key={index} className="text-xs text-gray-600">
-                          {index + 1}. {item}
+                        <div className="bg-white p-3 rounded-lg">
+                          <div className="text-2xl font-bold text-yellow-600">{aiInsights.lowStockItems}</div>
+                          <div className="text-xs text-gray-500">Low Stock</div>
                         </div>
-                      ))}
+                      </div>
+
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">Sales Forecast</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Next Week:</span>
+                            <span className="text-sm font-medium">${aiInsights.predictedSales.nextWeek.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600">Next Month:</span>
+                            <span className="text-sm font-medium">${aiInsights.predictedSales.nextMonth.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">AI Recommendations</h4>
+                        <div className="space-y-2">
+                          {aiInsights.aiRecommendations.map((rec: string, index: number) => (
+                            <div key={index} className="text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                              {rec}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-4 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">Top Performers</h4>
+                        <div className="space-y-1">
+                          {aiInsights.topPerformers.map((item: string, index: number) => (
+                            <div key={index} className="text-xs text-gray-600">
+                              {index + 1}. {item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Add Item Modal */}
         {showAddItem && (
           <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">

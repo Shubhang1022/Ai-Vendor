@@ -18,6 +18,7 @@ import { PriceDiscoveryModal } from '../modals/PriceDiscoveryModal'
 import { NegotiationModal } from '../modals/NegotiationModal'
 import { InventoryManagementModal } from '../modals/InventoryManagementModal'
 import { PricingAnalyticsModal } from '../modals/PricingAnalyticsModal'
+import { AddListingModal } from '../modals/AddListingModal'
 
 export function VendorDashboard() {
   const { user } = useAuthStore()
@@ -25,6 +26,7 @@ export function VendorDashboard() {
   const [showNegotiation, setShowNegotiation] = useState(false)
   const [showInventoryManagement, setShowInventoryManagement] = useState(false)
   const [showPricingAnalytics, setShowPricingAnalytics] = useState(false)
+  const [showAddListing, setShowAddListing] = useState(false)
   const [vendorStats, setVendorStats] = useState({
     totalListings: 0,
     activeNegotiations: 0,
@@ -260,7 +262,10 @@ export function VendorDashboard() {
               <Plus className="w-4 h-4 mr-2 inline" />
               New Price Discovery
             </button>
-            <button className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors">
+            <button 
+              onClick={() => setShowAddListing(true)}
+              className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors"
+            >
               <Package className="w-4 h-4 mr-2 inline" />
               Add New Listing
             </button>
@@ -298,7 +303,10 @@ export function VendorDashboard() {
                 <Package className="w-5 h-5 mr-2" />
                 Active Listings
               </h3>
-              <button className="btn btn-primary text-sm">
+              <button 
+                onClick={() => setShowAddListing(true)}
+                className="btn btn-primary text-sm"
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Add Listing
               </button>
@@ -386,6 +394,9 @@ export function VendorDashboard() {
       )}
       {showPricingAnalytics && (
         <PricingAnalyticsModal onClose={() => setShowPricingAnalytics(false)} />
+      )}
+      {showAddListing && (
+        <AddListingModal onClose={() => setShowAddListing(false)} />
       )}
     </div>
   )

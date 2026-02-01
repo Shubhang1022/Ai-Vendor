@@ -16,11 +16,17 @@ import {
 } from 'lucide-react'
 import { UserManagementModal } from '../modals/UserManagementModal'
 import { SystemSettingsModal } from '../modals/SystemSettingsModal'
+import { SecurityAuditModal } from '../modals/SecurityAuditModal'
+import { DatabaseBackupModal } from '../modals/DatabaseBackupModal'
+import { AnalyticsReportModal } from '../modals/AnalyticsReportModal'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
   const [showUserManagement, setShowUserManagement] = useState(false)
   const [showSystemSettings, setShowSystemSettings] = useState(false)
+  const [showSecurityAudit, setShowSecurityAudit] = useState(false)
+  const [showDatabaseBackup, setShowDatabaseBackup] = useState(false)
+  const [showAnalyticsReport, setShowAnalyticsReport] = useState(false)
   const [systemStats, setSystemStats] = useState({
     totalUsers: 0,
     activeVendors: 0,
@@ -226,15 +232,24 @@ export function AdminDashboard() {
               <Settings className="w-4 h-4 mr-2 inline" />
               System Settings
             </button>
-            <button className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors">
+            <button 
+              onClick={() => setShowSecurityAudit(true)}
+              className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors"
+            >
               <Shield className="w-4 h-4 mr-2 inline" />
               Security Audit
             </button>
-            <button className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors">
+            <button 
+              onClick={() => setShowDatabaseBackup(true)}
+              className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors"
+            >
               <Database className="w-4 h-4 mr-2 inline" />
               Database Backup
             </button>
-            <button className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors">
+            <button 
+              onClick={() => setShowAnalyticsReport(true)}
+              className="w-full btn btn-secondary text-left hover:bg-gray-300 transition-colors"
+            >
               <BarChart3 className="w-4 h-4 mr-2 inline" />
               Analytics Report
             </button>
@@ -272,6 +287,15 @@ export function AdminDashboard() {
       )}
       {showSystemSettings && (
         <SystemSettingsModal onClose={() => setShowSystemSettings(false)} />
+      )}
+      {showSecurityAudit && (
+        <SecurityAuditModal onClose={() => setShowSecurityAudit(false)} />
+      )}
+      {showDatabaseBackup && (
+        <DatabaseBackupModal onClose={() => setShowDatabaseBackup(false)} />
+      )}
+      {showAnalyticsReport && (
+        <AnalyticsReportModal onClose={() => setShowAnalyticsReport(false)} />
       )}
     </div>
   )

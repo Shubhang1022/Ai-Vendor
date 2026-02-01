@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios'
+import axios from 'axios'
 import { useAuthStore } from '../stores/authStore'
 
 const API_BASE_URL = '/api'
@@ -136,6 +136,105 @@ export const mfaApi = {
       mfaEnabled: boolean
       mfaConfigured: boolean
     }>>('/mfa/status').then(res => res.data),
+}
+
+// AI API
+export const aiApi = {
+  optimizePricing: (productData: {
+    name: string
+    currentPrice: number
+    category: string
+    salesHistory: Array<{ date: Date; quantity: number; price: number }>
+    competitorPrices: number[]
+    marketTrend: string
+  }) =>
+    api.post<ApiResponse<{
+      suggestedPrice: number
+      confidence: number
+      reasoning: string
+      priceElasticity: number
+    }>>('/ai/pricing/optimize', { productData }).then(res => res.data),
+
+  forecastDemand: (inventoryItem: {
+    id: string
+    name: string
+    category: string
+    currentStock: number
+    salesHistory: Array<{ date: Date; quantity: number; price: number }>
+  }) =>
+    api.post<ApiResponse<{
+      predictedDemand: number
+      confidence: number
+      reorderRecommendation: string
+      riskLevel: 'low' | 'medium' | 'high'
+    }>>('/ai/inventory/forecast', { inventoryItem }).then(res => res.data),
+
+  getCompetitorPrices: (productName: string) =>
+    api.get<ApiResponse<Array<{
+      supplier: string
+      price: number
+      rating: number
+      availability: string
+      source: string
+      aiScore: number
+    }>>>(`/ai/pricing/competitors/${encodeURIComponent(productName)}`).then(res => res.data),
+
+  analyzeMarketSentiment: (category: string) =>
+    api.get<ApiResponse<{
+      sentiment: 'positive' | 'negative' | 'neutral'
+      confidence: number
+      insights: string[]
+      marketTrend: 'up' | 'down' | 'stable'
+    }>>(`/ai/market/sentiment/${encodeURIComponent(category)}`).then(res => res.data),
+
+  // Admin AI endpoints
+  performSecurityAudit: () =>
+    api.post<ApiResponse<{
+      securityScore: number
+      totalIssues: number
+      criticalIssues: number
+      aiAnalysis: string
+      timestamp: string
+    }>>('/ai/admin/security-audit').then(res => res.data),
+
+  generateAnalyticsReport: (period: string, reportType: string) =>
+    api.post<ApiResponse<{
+      period: string
+      reportType: string
+      userGrowth: number
+      revenueGrowth: number
+      aiInsights: string[]
+      generatedAt: string
+    }>>('/ai/admin/analytics-report', { period, reportType }).then(res => res.data),
+
+  performDatabaseBackup: (backupType: string) =>
+    api.post<ApiResponse<{
+      backupId: string
+      type: string
+      size: string
+      duration: string
+      status: string
+      aiOptimized: boolean
+      compressionRatio: number
+      timestamp: string
+    }>>('/ai/admin/database-backup', { backupType }).then(res => res.data),
+
+  // Vendor AI endpoints
+  optimizeListing: (listingData: {
+    title: string
+    category: string
+    description: string
+    price: number
+  }) =>
+    api.post<ApiResponse<{
+      optimizedTitle: string
+      suggestedPrice: number
+      priceConfidence: number
+      marketDemand: string
+      suggestedTags: string[]
+      aiAnalysis: string
+      timestamp: string
+    }>>('/ai/vendor/listing-optimization', { listingData }).then(res => res.data),
 }
 
 export default api

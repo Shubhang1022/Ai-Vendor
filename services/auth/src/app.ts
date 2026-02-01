@@ -4,6 +4,7 @@ import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import authRoutes from './routes/auth';
 import mfaRoutes from './routes/mfa';
+import aiRoutes from './routes/ai';
 import redisService from './services/redis';
 
 const app = express();
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/mfa', mfaRoutes);
+app.use('/api/ai', aiRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
